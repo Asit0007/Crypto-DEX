@@ -1,4 +1,4 @@
-# `Crypto-DEX`
+# `Crypto-DEX` ![](https://visitor-badge.glitch.me/badge?page_id=Asit0007.DSA-problems)
 
 > React components and hooks for fast building dApps without running own backend
 

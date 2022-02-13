@@ -1,5 +1,6 @@
 {
-  "name": "ethereum-boilerplate",
+  "homepage": "https://Asit0007.github.io/Crypto-DEX",
+  "name": "crypto-dex",
   "version": "0.1.0",
   "dependencies": {
     "@ant-design/icons": "^4.7.0",
@@ -21,6 +22,7 @@
     "yarn": "^1.22.17"
   },
   "scripts": {
+    "predeploy": "npm run build",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",

@@ -49,7 +49,7 @@ export default function QuickStart({ isServerInfo }) {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                ethereum-boilerplate
+                Crypto-DEX
               </a>{" "}
             </Text>
           </Timeline.Item>

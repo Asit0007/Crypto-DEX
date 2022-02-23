@@ -8,7 +8,7 @@ If this boilerplate helps you build Ethereum dapps faster - please star this pro
 
 # 🚀 Quick Start
 
-📄 Clone or fork `ethereum-boilerplate`:
+📄 Clone or fork `Crypto-DEX`:
 
 ```sh
 git clone https://github.com/Asit0007/Crypto-DEX.git

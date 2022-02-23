@@ -1,19 +1,19 @@
 {
   "files": {
     "main.css": "/Crypto-DEX/static/css/main.ce65d123.chunk.css",
-    "main.js": "/Crypto-DEX/static/js/main.1d33534f.chunk.js",
-    "main.js.map": "/Crypto-DEX/static/js/main.1d33534f.chunk.js.map",
+    "main.js": "/Crypto-DEX/static/js/main.7d847cd8.chunk.js",
+    "main.js.map": "/Crypto-DEX/static/js/main.7d847cd8.chunk.js.map",
     "runtime-main.js": "/Crypto-DEX/static/js/runtime-main.5e99a51d.js",
     "runtime-main.js.map": "/Crypto-DEX/static/js/runtime-main.5e99a51d.js.map",
     "static/css/2.7393f959.chunk.css": "/Crypto-DEX/static/css/2.7393f959.chunk.css",
-    "static/js/2.81abb1e0.chunk.js": "/Crypto-DEX/static/js/2.81abb1e0.chunk.js",
-    "static/js/2.81abb1e0.chunk.js.map": "/Crypto-DEX/static/js/2.81abb1e0.chunk.js.map",
+    "static/js/2.d256d7f2.chunk.js": "/Crypto-DEX/static/js/2.d256d7f2.chunk.js",
+    "static/js/2.d256d7f2.chunk.js.map": "/Crypto-DEX/static/js/2.d256d7f2.chunk.js.map",
     "index.html": "/Crypto-DEX/index.html",
     "service-worker.js": "/Crypto-DEX/service-worker.js",
     "service-worker.js.map": "/Crypto-DEX/service-worker.js.map",
     "static/css/2.7393f959.chunk.css.map": "/Crypto-DEX/static/css/2.7393f959.chunk.css.map",
     "static/css/main.ce65d123.chunk.css.map": "/Crypto-DEX/static/css/main.ce65d123.chunk.css.map",
-    "static/js/2.81abb1e0.chunk.js.LICENSE.txt": "/Crypto-DEX/static/js/2.81abb1e0.chunk.js.LICENSE.txt",
+    "static/js/2.d256d7f2.chunk.js.LICENSE.txt": "/Crypto-DEX/static/js/2.d256d7f2.chunk.js.LICENSE.txt",
     "static/media/Coin98.1e4e4073.png": "/Crypto-DEX/static/media/Coin98.1e4e4073.png",
     "static/media/MathWallet.19212234.svg": "/Crypto-DEX/static/media/MathWallet.19212234.svg",
     "static/media/SafePal.e7068bbc.svg": "/Crypto-DEX/static/media/SafePal.e7068bbc.svg",
@@ -23,8 +23,8 @@
   "entrypoints": [
     "static/js/runtime-main.5e99a51d.js",
     "static/css/2.7393f959.chunk.css",
-    "static/js/2.81abb1e0.chunk.js",
+    "static/js/2.d256d7f2.chunk.js",
     "static/css/main.ce65d123.chunk.css",
-    "static/js/main.1d33534f.chunk.js"
+    "static/js/main.7d847cd8.chunk.js"
   ]
 }

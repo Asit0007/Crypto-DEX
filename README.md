@@ -1,4 +1,4 @@
-# `Crypto-DEX` ![](https://visitor-badge.glitch.me/badge?page_id=Asit0007.DSA-problems)
+# `Crypto-DEX` ![](https://visitor-badge.glitch.me/badge?page_id=Asit0007.Crypto-DEX)
 
 > React components and hooks for fast building dApps without running own backend
 
@@ -8,7 +8,7 @@ If this boilerplate helps you build Ethereum dapps faster - please star this pro
 
 # 🚀 Quick Start
 
-📄 Clone or fork `ethereum-boilerplate`:
+📄 Clone or fork `Crypto-DEX`:
 
 ```sh
 git clone https://github.com/Asit0007/Crypto-DEX.git

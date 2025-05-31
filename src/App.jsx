@@ -122,7 +122,7 @@ const App = ({ isServerInfo }) => {
               <Contract />
             </Route>
             <Route path="/">
-              <Redirect to="/erc20transfers" />
+              <Redirect to="/Crypto-DEX" />
             </Route>
             <Route path="/Crypto-DEX">
               <Redirect to="/erc20transfers" />

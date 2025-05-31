@@ -58,3 +58,11 @@ textarea,
 select {
   font: inherit;
 }
+/* src/style.css */
+@media (max-width: 600px) {
+  .main-container {
+    padding: 8px;
+    font-size: 14px;
+  }
+  /* Add more responsive rules for other classes as needed */
+}

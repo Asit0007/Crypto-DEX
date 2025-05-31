@@ -1,3 +1,4 @@
 {
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "marquee.widgets.npm-stats.packageNames": ["crypto-dex"]
 }

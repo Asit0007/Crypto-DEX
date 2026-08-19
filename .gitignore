@@ -33,3 +33,6 @@ typechain
 /Truffle/build
 /Truffle/data
 .vercel
+
+# Project documentation (local only)
+claude.md

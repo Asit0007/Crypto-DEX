@@ -1,42 +1,15 @@
 import { useState, useEffect, useMemo } from "react";
-import { useMoralis } from "react-moralis";
+import { useMoralis, useTokenPrice } from "react-moralis";
 import InchModal from "./components/InchModal";
 import useInchDex from "hooks/useInchDex";
-import { Button, Card, Image, Input, InputNumber, Modal } from "antd";
-import Text from "antd/lib/typography/Text";
-import { ArrowDownOutlined } from "@ant-design/icons";
-import { useTokenPrice } from "react-moralis";
+import { Button, Image, Input, InputNumber, Modal, Popover } from "antd";
+import { ArrowDownOutlined, SettingOutlined } from "@ant-design/icons";
 import { tokenValue } from "helpers/formatters";
 import { getWrappedNative } from "helpers/networks";
-// import { useOneInchQuote } from "react-moralis";
-
-const styles = {
-  card: {
-    width: "430px",
-    boxShadow: "0 0.5rem 1.2rem rgb(189 197 209 / 20%)",
-    border: "1px solid #e7eaf3",
-    borderRadius: "1rem",
-    fontSize: "16px",
-    fontWeight: "500",
-  },
-  input: {
-    padding: "0",
-    fontWeight: "500",
-    fontSize: "23px",
-    display: "block",
-    width: "100%",
-  },
-  priceSwap: {
-    display: "flex",
-    justifyContent: "space-between",
-    fontSize: "15px",
-    color: "#434343",
-    marginTop: "8px",
-    padding: "0 10px",
-  },
-};
 
 const nativeAddress = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+const FALLBACK_LOGO = "https://etherscan.io/images/main/empty-token.png";
+const QUOTE_REFRESH_MS = 15000;
 
 const chainIds = {
   "0x1": "eth",
@@ -44,14 +17,17 @@ const chainIds = {
   "0x89": "polygon",
 };
 
-const getChainIdByName = (chainName) => {
-  for (let chainId in chainIds) {
-    if (chainIds[chainId] === chainName) return chainId;
-  }
-};
+const getChainIdByName = (chainName) =>
+  Object.keys(chainIds).find((key) => chainIds[key] === chainName) ?? null;
 
-const IsNative = (address) =>
-  address === "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+const IsNative = (address) => address === nativeAddress;
+
+const InfoRow = ({ label, children }) => (
+  <div className="flex items-center justify-between gap-4 px-1 text-sm text-fg-muted">
+    <span>{label}</span>
+    <span className="text-right text-fg">{children}</span>
+  </div>
+);
 
 function DEX({ chain, customTokens = {} }) {
   const { trySwap, tokenList, getQuote } = useInchDex(chain);
@@ -63,6 +39,7 @@ function DEX({ chain, customTokens = {} }) {
   const [toToken, setToToken] = useState();
   const [fromAmount, setFromAmount] = useState();
   const [quote, setQuote] = useState();
+  const [slippage, setSlippage] = useState(1);
   const [currentTrade, setCurrentTrade] = useState();
   const { fetchTokenPrice } = useTokenPrice();
   const [tokenPricesUSD, setTokenPricesUSD] = useState({});
@@ -71,73 +48,71 @@ function DEX({ chain, customTokens = {} }) {
     return { ...customTokens, ...tokenList };
   }, [customTokens, tokenList]);
 
-  const fromTokenPriceUsd = useMemo(
-    () =>
-      tokenPricesUSD?.[fromToken?.["address"]]
-        ? tokenPricesUSD[fromToken?.["address"]]
-        : null,
-    [tokenPricesUSD, fromToken],
-  );
-
-  const toTokenPriceUsd = useMemo(
-    () =>
-      tokenPricesUSD?.[toToken?.["address"]]
-        ? tokenPricesUSD[toToken?.["address"]]
-        : null,
-    [tokenPricesUSD, toToken],
-  );
+  const fromTokenPriceUsd = tokenPricesUSD?.[fromToken?.address] ?? null;
+  const toTokenPriceUsd = tokenPricesUSD?.[toToken?.address] ?? null;
 
   const fromTokenAmountUsd = useMemo(() => {
     if (!fromTokenPriceUsd || !fromAmount) return null;
-    return `~$ ${(fromAmount * fromTokenPriceUsd).toFixed(4)}`;
+    return `~$${(fromAmount * fromTokenPriceUsd).toFixed(4)}`;
   }, [fromTokenPriceUsd, fromAmount]);
 
-  const toTokenAmountUsd = useMemo(() => {
-    if (!toTokenPriceUsd || !quote) return null;
-    return `~$ ${(
-      Moralis?.Units?.FromWei(quote?.toTokenAmount, quote?.toToken?.decimals) *
-      toTokenPriceUsd
-    ).toFixed(4)}`;
+  const toTokenAmount = useMemo(() => {
+    if (!quote?.toTokenAmount) return null;
+    return Moralis?.Units?.FromWei(quote.toTokenAmount, quote.toToken.decimals);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toTokenPriceUsd, quote]);
+  }, [quote]);
 
-  // tokenPrices
+  const toTokenAmountUsd = useMemo(() => {
+    if (!toTokenPriceUsd || !toTokenAmount) return null;
+    return `~$${(toTokenAmount * toTokenPriceUsd).toFixed(4)}`;
+  }, [toTokenPriceUsd, toTokenAmount]);
+
+  const minReceived = useMemo(() => {
+    if (!toTokenAmount || !toToken) return null;
+    return `${(toTokenAmount * (1 - slippage / 100)).toFixed(6)} ${
+      toToken.symbol
+    }`;
+  }, [toTokenAmount, toToken, slippage]);
+
+  // token prices (functional updates: both effects may resolve in the same tick)
   useEffect(() => {
-    if (!isInitialized || !fromToken || !chain) return null;
-    const validatedChain = chain ? getChainIdByName(chain) : chainId;
-    const tokenAddress = IsNative(fromToken["address"])
+    if (!isInitialized || !fromToken || !chain) return;
+    const validatedChain = getChainIdByName(chain) ?? chainId;
+    const tokenAddress = IsNative(fromToken.address)
       ? getWrappedNative(validatedChain)
-      : fromToken["address"];
+      : fromToken.address;
+    if (!validatedChain || !tokenAddress) return;
     fetchTokenPrice({
       params: { chain: validatedChain, address: tokenAddress },
       onSuccess: (price) =>
-        setTokenPricesUSD({
-          ...tokenPricesUSD,
-          [fromToken["address"]]: price["usdPrice"],
-        }),
+        setTokenPricesUSD((prev) => ({
+          ...prev,
+          [fromToken.address]: price.usdPrice,
+        })),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chain, isInitialized, fromToken]);
 
   useEffect(() => {
-    if (!isInitialized || !toToken || !chain) return null;
-    const validatedChain = chain ? getChainIdByName(chain) : chainId;
-    const tokenAddress = IsNative(toToken["address"])
+    if (!isInitialized || !toToken || !chain) return;
+    const validatedChain = getChainIdByName(chain) ?? chainId;
+    const tokenAddress = IsNative(toToken.address)
       ? getWrappedNative(validatedChain)
-      : toToken["address"];
+      : toToken.address;
+    if (!validatedChain || !tokenAddress) return;
     fetchTokenPrice({
       params: { chain: validatedChain, address: tokenAddress },
       onSuccess: (price) =>
-        setTokenPricesUSD({
-          ...tokenPricesUSD,
-          [toToken["address"]]: price["usdPrice"],
-        }),
+        setTokenPricesUSD((prev) => ({
+          ...prev,
+          [toToken.address]: price.usdPrice,
+        })),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chain, isInitialized, toToken]);
 
   useEffect(() => {
-    if (!tokens || fromToken) return null;
+    if (!tokens || fromToken) return;
     setFromToken(tokens[nativeAddress]);
   }, [tokens, fromToken]);
 
@@ -153,207 +128,195 @@ function DEX({ chain, customTokens = {} }) {
   useEffect(() => {
     if (fromToken && toToken && fromAmount)
       setCurrentTrade({ fromToken, toToken, fromAmount, chain });
+    else setCurrentTrade();
   }, [toToken, fromToken, fromAmount, chain]);
 
+  // keep the quote fresh while a trade is assembled, so the user never
+  // signs against a minutes-old price
   useEffect(() => {
-    if (currentTrade) getQuote(currentTrade).then((quote) => setQuote(quote));
+    if (!currentTrade) {
+      setQuote();
+      return;
+    }
+    let cancelled = false;
+    const refreshQuote = () =>
+      getQuote(currentTrade)
+        .then((freshQuote) => {
+          if (!cancelled) setQuote(freshQuote);
+        })
+        .catch(() => {});
+    refreshQuote();
+    const id = setInterval(refreshQuote, QUOTE_REFRESH_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTrade]);
 
   const PriceSwap = () => {
-    const Quote = quote;
-    if (!Quote || !tokenPricesUSD?.[toToken?.["address"]]) return null;
-    if (Quote?.statusCode === 400) return <>{Quote.message}</>;
-    console.log(Quote);
-    const { fromTokenAmount, toTokenAmount } = Quote;
-    const { symbol: fromSymbol } = fromToken;
-    const { symbol: toSymbol } = toToken;
+    if (!quote || !toTokenPriceUsd) return null;
+    if (quote?.statusCode === 400) return <>{quote.message}</>;
+    const toValue = tokenValue(quote.toTokenAmount, toToken.decimals);
+    if (!toValue) return null;
     const pricePerToken = parseFloat(
-      tokenValue(fromTokenAmount, fromToken["decimals"]) /
-        tokenValue(toTokenAmount, toToken["decimals"]),
+      tokenValue(quote.fromTokenAmount, fromToken.decimals) / toValue,
     ).toFixed(6);
     return (
-      <Text style={styles.priceSwap}>
-        Price:{" "}
-        <Text>{`1 ${toSymbol} = ${pricePerToken} ${fromSymbol} ($${tokenPricesUSD[
-          [toToken["address"]]
-        ].toFixed(6)})`}</Text>
-      </Text>
+      <InfoRow label="Rate">
+        {`1 ${toToken.symbol} = ${pricePerToken} ${
+          fromToken.symbol
+        } ($${toTokenPriceUsd.toFixed(4)})`}
+      </InfoRow>
     );
   };
 
+  const TokenSelect = ({ token, onSelect }) => (
+    <Button
+      type={token ? "default" : "primary"}
+      onClick={onSelect}
+      className="flex h-auto items-center gap-2 rounded-xl border-none px-2.5 py-1.5 text-base font-semibold"
+    >
+      {token ? (
+        <Image
+          src={token.logoURI || FALLBACK_LOGO}
+          fallback={FALLBACK_LOGO}
+          alt=""
+          width="28px"
+          preview={false}
+          className="rounded-full"
+        />
+      ) : (
+        <span>Select token</span>
+      )}
+      <span>{token?.symbol}</span>
+      <Arrow />
+    </Button>
+  );
+
+  const slippageMenu = (
+    <div className="w-60">
+      <div className="mb-2 text-sm text-fg-muted">Max slippage</div>
+      <div className="flex items-center gap-2">
+        {[0.5, 1, 3].map((value) => (
+          <Button
+            key={value}
+            size="small"
+            type={slippage === value ? "primary" : "default"}
+            className="rounded-lg"
+            onClick={() => setSlippage(value)}
+          >
+            {value}%
+          </Button>
+        ))}
+        <InputNumber
+          size="small"
+          min={0.1}
+          max={50}
+          step={0.1}
+          value={slippage}
+          onChange={(value) => setSlippage(value || 1)}
+          className="w-20"
+        />
+      </div>
+      <div className="mt-2 text-xs text-fg-muted">
+        Your swap reverts if the price moves against you by more than this.
+      </div>
+    </div>
+  );
+
   return (
     <>
-      <Card style={styles.card} bodyStyle={{ padding: "18px" }}>
-        <Card
-          style={{ borderRadius: "1rem" }}
-          bodyStyle={{ padding: "0.8rem" }}
-        >
-          <div
-            style={{ marginBottom: "5px", fontSize: "14px", color: "#434343" }}
+      <div className="w-full max-w-[430px] rounded-2xl border border-ink-border bg-ink-raised p-4 shadow-card">
+        <div className="mb-3 flex items-center justify-between px-1">
+          <span className="text-lg font-bold">Swap</span>
+          <Popover
+            content={slippageMenu}
+            trigger="click"
+            placement="bottomRight"
           >
-            From
-          </div>
-          <div
-            style={{
-              display: "flex",
-              flexFlow: "row nowrap",
-            }}
-          >
-            <div>
+            <Button
+              type="text"
+              aria-label="Slippage settings"
+              icon={<SettingOutlined />}
+              className="text-fg-muted"
+            />
+          </Popover>
+        </div>
+
+        <div className="rounded-2xl border border-ink-border bg-ink-overlay p-3">
+          <div className="mb-1 text-sm text-fg-muted">From</div>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
               <InputNumber
                 bordered={false}
                 placeholder="0.00"
-                style={{ ...styles.input, marginLeft: "-10px" }}
+                className="w-full text-2xl font-semibold"
                 onChange={setFromAmount}
                 value={fromAmount}
               />
-              <Text style={{ fontWeight: "600", color: "#434343" }}>
+              <span className="pl-1 text-sm font-semibold text-fg-muted">
                 {fromTokenAmountUsd}
-              </Text>
+              </span>
             </div>
-            <Button
-              style={{
-                height: "fit-content",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                borderRadius: "0.6rem",
-                padding: "5px 10px",
-                fontWeight: "500",
-                fontSize: "17px",
-                gap: "7px",
-                border: "none",
-              }}
-              onClick={() => setFromModalActive(true)}
-            >
-              {fromToken ? (
-                <Image
-                  src={
-                    fromToken?.logoURI ||
-                    "https://etherscan.io/images/main/empty-token.png"
-                  }
-                  alt="nologo"
-                  width="30px"
-                  preview={false}
-                  style={{ borderRadius: "15px" }}
-                />
-              ) : (
-                <span>Select a token</span>
-              )}
-              <span>{fromToken?.symbol}</span>
-              <Arrow />
-            </Button>
+            <TokenSelect
+              token={fromToken}
+              onSelect={() => setFromModalActive(true)}
+            />
           </div>
-        </Card>
-        <div
-          style={{ display: "flex", justifyContent: "center", padding: "10px" }}
-        >
+        </div>
+
+        <div className="flex justify-center py-2 text-fg-muted">
           <ArrowDownOutlined />
         </div>
-        <Card
-          style={{ borderRadius: "1rem" }}
-          bodyStyle={{ padding: "0.8rem" }}
-        >
-          <div
-            style={{ marginBottom: "5px", fontSize: "14px", color: "#434343" }}
-          >
-            To
-          </div>
-          <div
-            style={{
-              display: "flex",
-              flexFlow: "row nowrap",
-            }}
-          >
-            <div>
+
+        <div className="rounded-2xl border border-ink-border bg-ink-overlay p-3">
+          <div className="mb-1 text-sm text-fg-muted">To</div>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
               <Input
                 bordered={false}
                 placeholder="0.00"
-                style={styles.input}
+                className="w-full p-0 text-2xl font-semibold"
                 readOnly
                 value={
-                  quote
-                    ? parseFloat(
-                        Moralis?.Units?.FromWei(
-                          quote?.toTokenAmount,
-                          quote?.toToken?.decimals,
-                        ),
-                      ).toFixed(6)
-                    : ""
+                  toTokenAmount ? parseFloat(toTokenAmount).toFixed(6) : ""
                 }
               />
-              <Text style={{ fontWeight: "600", color: "#434343" }}>
+              <span className="pl-1 text-sm font-semibold text-fg-muted">
                 {toTokenAmountUsd}
-              </Text>
+              </span>
             </div>
-            <Button
-              style={{
-                height: "fit-content",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                borderRadius: "0.6rem",
-                padding: "5px 10px",
-                fontWeight: "500",
-                fontSize: "17px",
-                gap: "7px",
-                border: "none",
-              }}
-              onClick={() => setToModalActive(true)}
-              type={toToken ? "default" : "primary"}
-            >
-              {toToken ? (
-                <Image
-                  src={
-                    toToken?.logoURI ||
-                    "https://etherscan.io/images/main/empty-token.png"
-                  }
-                  alt="nologo"
-                  width="30px"
-                  preview={false}
-                  style={{ borderRadius: "15px" }}
-                />
-              ) : (
-                <span>Select a token</span>
-              )}
-              <span>{toToken?.symbol}</span>
-              <Arrow />
-            </Button>
+            <TokenSelect
+              token={toToken}
+              onSelect={() => setToModalActive(true)}
+            />
           </div>
-        </Card>
+        </div>
+
         {quote && (
-          <div>
-            <Text
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                fontSize: "15px",
-                color: "#434343",
-                marginTop: "8px",
-                padding: "0 10px",
-              }}
-            >
-              Estimated Gas: <Text>{quote?.estimatedGas}</Text>
-            </Text>
+          <div className="mt-3 flex flex-col gap-1 rounded-xl bg-ink px-2 py-2.5">
             <PriceSwap />
+            <InfoRow label="Estimated gas">{quote?.estimatedGas}</InfoRow>
+            {minReceived && (
+              <InfoRow label={`Min. received (${slippage}% slippage)`}>
+                {minReceived}
+              </InfoRow>
+            )}
           </div>
         )}
+
         <Button
           type="primary"
           size="large"
-          style={{
-            width: "100%",
-            marginTop: "15px",
-            borderRadius: "0.6rem",
-            height: "50px",
-          }}
-          onClick={() => trySwap(currentTrade)}
+          className="mt-4 h-12 w-full rounded-xl text-base font-bold"
+          onClick={() => trySwap(currentTrade, slippage)}
           disabled={!ButtonState.isActive}
         >
           {ButtonState.text}
         </Button>
-      </Card>
+      </div>
+
       <Modal
         title="Select a token"
         visible={isFromModalActive}
@@ -361,6 +324,7 @@ function DEX({ chain, customTokens = {} }) {
         bodyStyle={{ padding: 0 }}
         width="450px"
         footer={null}
+        destroyOnClose
       >
         <InchModal
           open={isFromModalActive}
@@ -376,6 +340,7 @@ function DEX({ chain, customTokens = {} }) {
         bodyStyle={{ padding: 0 }}
         width="450px"
         footer={null}
+        destroyOnClose
       >
         <InchModal
           open={isToModalActive}
@@ -393,8 +358,8 @@ export default DEX;
 const Arrow = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
+    width="20"
+    height="20"
     viewBox="0 0 24 24"
     strokeWidth="2"
     stroke="currentColor"

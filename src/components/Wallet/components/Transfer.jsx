@@ -6,40 +6,7 @@ import { useMoralis } from "react-moralis";
 import AddressInput from "../../AddressInput";
 import AssetSelector from "./AssetSelector";
 
-const styles = {
-  card: {
-    alignItems: "center",
-    width: "100%",
-  },
-  header: {
-    textAlign: "center",
-  },
-  input: {
-    width: "100%",
-    outline: "none",
-    fontSize: "16px",
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textverflow: "ellipsis",
-    appearance: "textfield",
-    color: "#041836",
-    fontWeight: "700",
-    border: "none",
-    backgroundColor: "transparent",
-  },
-  select: {
-    marginTop: "20px",
-    display: "flex",
-    alignItems: "center",
-  },
-  textWrapper: { maxWidth: "80px", width: "100%" },
-  row: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    flexDirection: "row",
-  },
-};
+const NATIVE_ADDRESS = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 
 function Transfer() {
   const { Moralis } = useMoralis();
@@ -58,9 +25,6 @@ function Transfer() {
       placement: "bottomRight",
       message,
       description,
-      onClick: () => {
-        console.log("Notification Clicked!");
-      },
     });
   };
 
@@ -70,7 +34,7 @@ function Transfer() {
     let options = {};
 
     switch (asset.token_address) {
-      case "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":
+      case NATIVE_ADDRESS:
         options = {
           native: "native",
           amount: Moralis.Units.ETH(amount),
@@ -97,14 +61,12 @@ function Transfer() {
           message: "🔊 New Transaction",
           description: `${hash}`,
         });
-        console.log("🔊 New Transaction", hash);
       })
       .on("receipt", (receipt) => {
         openNotification({
           message: "📃 New Receipt",
           description: `${receipt.transactionHash}`,
         });
-        console.log("🔊 New Receipt: ", receipt);
         setIsPending(false);
       })
       .on("error", (error) => {
@@ -118,46 +80,44 @@ function Transfer() {
   }
 
   return (
-    <div style={styles.card}>
-      <div style={styles.tranfer}>
-        <div style={styles.header}>
-          <h3>Transfer Assets</h3>
+    <div className="w-full">
+      <h3 className="mb-2 text-center text-lg font-bold text-fg">
+        Transfer Assets
+      </h3>
+      <div className="mt-5 flex items-center gap-3">
+        <div className="w-20 shrink-0">
+          <Text strong>Address:</Text>
         </div>
-        <div style={styles.select}>
-          <div style={styles.textWrapper}>
-            <Text strong>Address:</Text>
-          </div>
-          <AddressInput autoFocus onChange={setReceiver} />
-        </div>
-        <div style={styles.select}>
-          <div style={styles.textWrapper}>
-            <Text strong>Amount:</Text>
-          </div>
-          <Input
-            size="large"
-            prefix={<CreditCardOutlined />}
-            onChange={(e) => {
-              setAmount(`${e.target.value}`);
-            }}
-          />
-        </div>
-        <div style={styles.select}>
-          <div style={styles.textWrapper}>
-            <Text strong>Asset:</Text>
-          </div>
-          <AssetSelector setAsset={setAsset} style={{ width: "100%" }} />
-        </div>
-        <Button
-          type="primary"
-          size="large"
-          loading={isPending}
-          style={{ width: "100%", marginTop: "25px" }}
-          onClick={() => transfer()}
-          disabled={!tx}
-        >
-          Transfer💸
-        </Button>
+        <AddressInput autoFocus onChange={setReceiver} />
       </div>
+      <div className="mt-5 flex items-center gap-3">
+        <div className="w-20 shrink-0">
+          <Text strong>Amount:</Text>
+        </div>
+        <Input
+          size="large"
+          prefix={<CreditCardOutlined />}
+          onChange={(e) => {
+            setAmount(`${e.target.value}`);
+          }}
+        />
+      </div>
+      <div className="mt-5 flex items-center gap-3">
+        <div className="w-20 shrink-0">
+          <Text strong>Asset:</Text>
+        </div>
+        <AssetSelector setAsset={setAsset} style={{ width: "100%" }} />
+      </div>
+      <Button
+        type="primary"
+        size="large"
+        loading={isPending}
+        className="mt-6 w-full rounded-xl font-semibold"
+        onClick={() => transfer()}
+        disabled={!tx}
+      >
+        Transfer 💸
+      </Button>
     </div>
   );
 }

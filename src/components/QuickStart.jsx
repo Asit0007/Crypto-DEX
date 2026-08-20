@@ -1,153 +1,104 @@
 import { Card, Timeline, Typography } from "antd";
-import React, { useMemo } from "react";
-import { useMoralis } from "react-moralis";
 
 const { Text } = Typography;
 
-const styles = {
-  title: {
-    fontSize: "20px",
-    fontWeight: "700",
-  },
-  text: {
-    fontSize: "16px",
-  },
-  card: {
-    boxShadow: "0 0.5rem 1.2rem rgb(189 197 209 / 20%)",
-    border: "1px solid #e7eaf3",
-    borderRadius: "0.5rem",
-  },
-  timeline: {
-    marginBottom: "-45px",
-  },
-};
-
 export default function QuickStart({ isServerInfo }) {
-  const { Moralis } = useMoralis();
-
-  const isInchDex = useMemo(
-    () => (Moralis.Plugins?.oneInch ? true : false),
-    [Moralis.Plugins?.oneInch],
-  );
-
   return (
-    <div style={{ display: "flex", gap: "10px" }}>
+    <div className="flex w-full max-w-5xl flex-col gap-4 lg:flex-row">
       <Card
-        style={styles.card}
+        className="flex-1 self-start text-base shadow-card"
         title={
           <>
-            📝 <Text strong>To-Do List</Text>
+            🚀 <Text strong>Run Crypto-DEX locally</Text>
           </>
         }
       >
-        <Timeline mode="left" style={styles.timeline}>
+        <Timeline mode="left">
           <Timeline.Item dot="📄">
-            <Text delete style={styles.text}>
+            <Text delete>
               Clone or fork{" "}
               <a
-                href="https://github.com/ethereum-boilerplate/ethereum-boilerplate#-quick-start"
+                href="https://github.com/Asit0007/Crypto-DEX"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 Crypto-DEX
-              </a>{" "}
+              </a>
             </Text>
           </Timeline.Item>
 
           <Timeline.Item dot="💿">
-            <Text delete style={styles.text}>
+            <Text delete>
               Install all dependencies: <Text code>npm install</Text>
             </Text>
           </Timeline.Item>
 
-          <Timeline.Item dot="🧰">
-            <Text delete={isServerInfo} style={styles.text}>
-              Sign up for a free account on{" "}
-              <a
-                href="https://moralis.io?utm_source=boilerplatehosted&utm_medium=todo&utm_campaign=ethereum-boilerplate"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Moralis
-              </a>
-            </Text>
-          </Timeline.Item>
-
-          <Timeline.Item dot="💾">
-            <Text delete={isServerInfo} style={styles.text}>
-              Create a Moralis Server (
-              <a
-                href="https://docs.moralis.io/moralis-server/getting-started/create-a-moralis-server"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                How to start Moralis Server
-              </a>
-              )
-            </Text>
-          </Timeline.Item>
-
           <Timeline.Item dot="🔏">
-            <Text delete={isServerInfo} style={styles.text}>
-              Rename <Text code>.env.example</Text> to <Text code>.env</Text>{" "}
-              and provide your <Text strong>appId</Text> and{" "}
-              <Text strong>serverUrl</Text> from{" "}
-              <a
-                href="https://moralis.io?utm_source=boilerplatehosted&utm_medium=todo&utm_campaign=ethereum-boilerplate"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Moralis
-              </a>
-              :
+            <Text delete={isServerInfo}>
+              Copy <Text code>.env.example</Text> to <Text code>.env</Text> and
+              provide your Moralis <Text strong>appId</Text> and{" "}
+              <Text strong>serverUrl</Text>:
             </Text>
-            <Text code delete={isServerInfo} style={{ display: "block" }}>
-              REACT_APP_MORALIS_APPLICATION_ID = xxxxxxxxxxxx
+            <Text code delete={isServerInfo} className="block">
+              REACT_APP_MORALIS_APPLICATION_ID=xxxxxxxxxxxx
             </Text>
-            <Text code delete={isServerInfo} style={{ display: "block" }}>
-              REACT_APP_MORALIS_SERVER_URL =
-              https://xxxxxx.grandmoralis.com:2053/server
+            <Text code delete={isServerInfo} className="block">
+              REACT_APP_MORALIS_SERVER_URL=https://xxxxxx.your-server.com/server
             </Text>
           </Timeline.Item>
 
           <Timeline.Item dot="🔁">
-            <Text delete={isServerInfo} style={styles.text}>
-              Stop the app and start it again <Text code>npm run start</Text>
+            <Text delete={isServerInfo}>
+              Restart the dev server: <Text code>npm run dev</Text>
             </Text>
           </Timeline.Item>
 
-          <Timeline.Item dot="💿">
-            <Text delete={isInchDex} style={styles.text}>
-              Install{" "}
-              <a
-                href="https://moralis.io/plugins/1inch/?utm_source=boilerplatehosted&utm_medium=todo&utm_campaign=ethereum-boilerplate"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                1inch Moralis Plugin
-              </a>{" "}
-              needed for the<Text code>{"<InchDex />"}</Text> component
-              (optional)
-            </Text>
-          </Timeline.Item>
-
-          <Timeline.Item dot="🚀">
-            <Text style={styles.text}>BUIDL!!!</Text>
+          <Timeline.Item dot="🛠">
+            <Text>BUIDL!</Text>
           </Timeline.Item>
         </Timeline>
       </Card>
-      <div>
+
+      <div className="flex flex-1 flex-col gap-4">
         <Card
-          style={styles.card}
+          className="shadow-card"
           title={
             <>
-              💣 <Text strong>Starting Local Chain (optional)</Text>
+              ⚠️ <Text strong>Project status</Text>
             </>
           }
         >
-          <Timeline mode="left" style={styles.timeline}>
+          <p>
+            Crypto-DEX was built on <Text strong>Moralis v1</Text> servers,
+            which Moralis has since sunset. Wallet connection and the UI work,
+            but live balances, transfers, and 1inch swaps stay empty until the
+            data layer is migrated.
+          </p>
+          <p className="mb-0 mt-3">
+            <Text strong>Phase 2 roadmap:</Text> wagmi + viem wallet layer,
+            WalletConnect v2, and a modern swap/price API. Track progress on{" "}
+            <a
+              href="https://github.com/Asit0007/Crypto-DEX"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub
+            </a>
+            .
+          </p>
+        </Card>
+
+        <Card
+          className="shadow-card"
+          title={
+            <>
+              💣 <Text strong>Local chain (optional)</Text>
+            </>
+          }
+        >
+          <Timeline mode="left">
             <Timeline.Item dot="💿">
-              <Text style={styles.text}>
+              <Text>
                 Install{" "}
                 <a
                   target="_blank"
@@ -163,62 +114,25 @@ export default function QuickStart({ isServerInfo }) {
                   href="https://www.npmjs.com/package/ganache-cli"
                 >
                   ganache-cli
-                </a>{" "}
-                <Text code>npm install -g ganache-cli truffle</Text>
+                </a>
+                : <Text code>npm install -g ganache-cli truffle</Text>
               </Text>
             </Timeline.Item>
             <Timeline.Item dot="⚙️">
-              <Text style={styles.text}>
-                Start you local devchain: <Text code>npm run devchain</Text> on
+              <Text>
+                Start your local devchain: <Text code>npm run devchain</Text> in
                 a new terminal
               </Text>
             </Timeline.Item>
             <Timeline.Item dot="📡">
-              <Text style={styles.text}>
-                Deploy test contract: <Text code>npm run deploy</Text> on a new
-                terminal
-              </Text>
-            </Timeline.Item>
-            <Timeline.Item dot="✅" style={styles.text}>
               <Text>
-                Open the 📄<Text strong> Contract</Text> tab
+                Compile and deploy the demo contract:{" "}
+                <Text code>npm run migrate</Text>
               </Text>
             </Timeline.Item>
-          </Timeline>
-        </Card>
-        <Card
-          style={{ marginTop: "10px", ...styles.card }}
-          title={
-            <>
-              📡{" "}
-              <Text strong> Connecting your Local Chain to the Moralis DB</Text>
-            </>
-          }
-        >
-          <Timeline mode="left" style={styles.timeline}>
-            <Timeline.Item dot="💿">
-              <Text style={styles.text}>
-                Download{" "}
-                <a
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  href="https://github.com/fatedier/frp/releases"
-                >
-                  frpc
-                </a>{" "}
-                and provide missing params in the <Text code>.env</Text> file
-              </Text>
-            </Timeline.Item>
-            <Timeline.Item dot="⚙️">
-              <Text style={styles.text}>
-                Connect your Moralis Database and Local Chain:{" "}
-                <Text code>npm run connect</Text>
-              </Text>
-            </Timeline.Item>
-            <Timeline.Item dot="💾">
-              <Text style={styles.text}>
-                Add contract events you want to watch:{" "}
-                <Text code>npm run watch:events</Text>
+            <Timeline.Item dot="✅">
+              <Text>
+                Open the 📄 <Text strong>Contract</Text> tab
               </Text>
             </Timeline.Item>
           </Timeline>

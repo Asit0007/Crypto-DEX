@@ -9,7 +9,7 @@ export default function ContractResolver({ contract, setContract }) {
   useEffect(() => {
     /** Tries to load local contract JSON file or get
      * it from browser localStorage(works only if file was uploaded previosly by drag&drop component) */
-    if (contractInfo?.name) {
+    if (contractInfo?.contractName) {
       setContract(contractInfo);
     } else if (window.localStorage.getItem("contract"))
       setContract(JSON.parse(window.localStorage.getItem("contract")));
@@ -31,17 +31,11 @@ export default function ContractResolver({ contract, setContract }) {
         : [],
       onChange(info) {
         const { status } = info.file;
-        if (status !== "uploading") {
-          console.log(info.file, info.fileList);
-        }
         if (status === "done") {
           message.success(`${info.file.name} file uploaded successfully.`);
         } else if (status === "error") {
           message.error(`${info.file.name} file upload failed.`);
         }
-      },
-      onDrop(e) {
-        console.log("Dropped files", e.dataTransfer.files);
       },
       onRemove() {
         setContract();

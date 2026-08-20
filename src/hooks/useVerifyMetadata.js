@@ -33,7 +33,7 @@ export const useVerifyMetadata = () => {
   async function getMetadata(NFT) {
     //Validate URI
     if (!NFT.token_uri || !NFT.token_uri.includes("://")) {
-      console.log("getMetadata() Invalid URI", { URI: NFT.token_uri, NFT });
+      console.warn("getMetadata() Invalid URI", { URI: NFT.token_uri, NFT });
       return;
     }
     //Get Metadata
@@ -68,11 +68,6 @@ export const useVerifyMetadata = () => {
           //No Errors
           //Set
           setMetadata(NFT, metadata);
-          //Log
-          console.log(
-            "getMetadata() Late-load for NFT Metadata " + NFT.token_uri,
-            { metadata },
-          );
         } //Valid Result
       })
       .catch((err) => {

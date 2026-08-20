@@ -1,32 +1,38 @@
-# Contributing to `ethereum-boilerplate`
+# Contributing to `Crypto-DEX`
 
-## Setting up the project for debugging and contributing
+## Setting up the project
 
-### Setting up you local machine:
-
-- [Fork](https://github.com/ethereum-boilerplate/ethereum-boilerplate) this project and clone the fork on your local machine:
+- [Fork](https://github.com/Asit0007/Crypto-DEX/fork) this project and clone
+  your fork:
 
 ```sh
-git clone https://github.com/ethereum-boilerplate/ethereum-boilerplate.git
-cd ethereum-boilerplate # go into the clone directory
-npm install # install all the node dependencies
+git clone https://github.com/<your-username>/Crypto-DEX.git
+cd Crypto-DEX
+npm install
 ```
 
-Make sure to have a ESlint and Prettier plugin installed to check for code-smells and auto-formatting.
+Use an editor with ESLint and Prettier plugins — the repo ships configs for
+both, and a `lint-staged` pre-commit hook formats staged files automatically.
 
-### Pull Requests
+## Pull requests
 
-1. Fork the repo and create your branch from `main`.
-2. Make sure your code lints and is correctly formatted.
+1. Create your branch from `main`.
+2. Make sure `npm run lint:check` and `npm run build` pass — CI runs both on
+   every PR.
+3. Keep PRs focused; one topic per PR.
 
-### Known Issues
+## Known issues
 
-We use GitHub issues to track public bugs. We will keep a close eye on this and try to make it clear when we have an internal fix in progress. Before filing a new issue, try to make sure your problem doesn't already exist.
+Bugs are tracked in
+[GitHub issues](https://github.com/Asit0007/Crypto-DEX/issues). Before filing
+a new one, check whether it already exists.
 
-### Coding Style
+## Coding style
 
-Please follow the [Coding Style](https://github.com/ethereum-boilerplate/ethereum-boilerplate/blob/main/CODING_STYLE.md).
+Follow the [Coding Style](CODING_STYLE.md), and see `.claude/skills/` for the
+project's design-system and Tailwind conventions.
 
 ## License
 
-By contributing to the ethereum-boilerplate, you agree that your contributions will be licensed under its license.
+By contributing to Crypto-DEX, you agree that your contributions will be
+licensed under its [MIT license](LICENSE).

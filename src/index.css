@@ -1,68 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------- base (preflight is off; antd owns the reset) ---------- */
+
+/* Minimal slice of Tailwind's preflight so border-* utilities behave:
+   border-style defaults to none, which would make `border` classes invisible. */
 *,
-*::before,
-*::after {
+::before,
+::after {
   box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: #232b38;
 }
 
-ul[class],
-ol[class] {
-  padding: 0;
-}
-
-body,
-h1,
-h2,
-h3,
-h4,
-p,
-ul[class],
-ol[class],
-li,
-figure,
-figcaption,
-blockquote,
-dl,
-dd {
-  margin: 0;
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   min-height: 100vh;
-  scroll-behavior: smooth;
-  text-rendering: optimizeSpeed;
+  margin: 0;
+  background-color: #0b0e14;
+  color: #e6eaf2;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, sans-serif;
   line-height: 1.5;
-  background-color: white;
-}
-
-ul[class],
-ol[class] {
-  list-style: none;
-}
-
-a:not([class]) {
-  text-decoration-skip-ink: auto;
+  text-rendering: optimizeSpeed;
 }
 
 img {
   max-width: 100%;
-  display: block;
 }
 
-article > * + * {
-  margin-top: 1em;
+::selection {
+  background: rgba(33, 191, 150, 0.35);
 }
 
-input,
-button,
-textarea,
-select {
-  font: inherit;
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
 }
-/* src/style.css */
-@media (max-width: 600px) {
-  .main-container {
-    padding: 8px;
-    font-size: 14px;
-  }
-  /* Add more responsive rules for other classes as needed */
+::-webkit-scrollbar-thumb {
+  background: #232b38;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------- antd dark theme mapped onto the Crypto-DEX palette ---------- */
+
+.ant-layout,
+.ant-layout-header,
+.ant-layout-footer {
+  background: transparent;
+}
+
+.ant-layout-footer {
+  color: #94a3b8;
+}
+
+a {
+  color: #2adfb2;
+}
+a:hover {
+  color: #21bf96;
+}
+
+.ant-card {
+  background: #12161f;
+  border-color: #232b38;
+  border-radius: 1rem;
+  color: #e6eaf2;
+}
+.ant-card-head {
+  border-bottom-color: #232b38;
+  color: #e6eaf2;
+}
+
+.ant-modal-content {
+  background: #12161f;
+  border: 1px solid #232b38;
+  border-radius: 1rem;
+  overflow: auto;
+}
+.ant-modal-header {
+  background: #12161f;
+  border-bottom-color: #232b38;
+  border-radius: 1rem 1rem 0 0;
+}
+
+.ant-btn {
+  border-radius: 0.6rem;
+}
+.ant-btn-primary {
+  background: linear-gradient(135deg, #21bf96, #189d7b);
+  border: none;
+}
+.ant-btn-primary:hover:not([disabled]),
+.ant-btn-primary:focus:not([disabled]) {
+  background: linear-gradient(135deg, #2adfb2, #21bf96);
+}
+
+/* horizontal nav underline + link color -> brand green */
+.ant-menu-horizontal {
+  background: transparent;
+  border-bottom: none;
+}
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item:hover::after,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-submenu:hover::after,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item-active::after,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-submenu-active::after,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item-open::after,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-submenu-open::after,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item-selected::after,
+.ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-submenu-selected::after {
+  border-bottom: 2px solid #21bf96 !important;
+}
+.ant-menu-horizontal > .ant-menu-item-selected a,
+.ant-menu-horizontal > .ant-menu-item a:hover {
+  color: #21bf96 !important;
+}
+
+.ant-dropdown-menu {
+  background: #1a2029;
+  border: 1px solid #232b38;
+  border-radius: 0.75rem;
+}
+
+.ant-table {
+  background: #12161f;
+}
+.ant-table-thead > tr > th {
+  background: #1a2029;
+  border-bottom-color: #232b38;
+  color: #94a3b8;
+}
+.ant-table-tbody > tr > td {
+  border-bottom-color: #232b38;
+}
+.ant-table-tbody > tr:hover > td {
+  background: #1a2029 !important;
+}
+
+.ant-tabs-tab:hover,
+.ant-tabs-tab-btn:active {
+  color: #2adfb2;
+}
+.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #21bf96;
+}
+.ant-tabs-ink-bar {
+  background: #21bf96;
+}
+
+.ant-notification-notice {
+  background: #1a2029;
+  border: 1px solid #232b38;
+  border-radius: 0.75rem;
 }

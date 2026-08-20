@@ -48,17 +48,20 @@ function ERC20Balance(props) {
   ];
 
   return (
-    <div style={{ width: "65vw", padding: "15px" }}>
-      <h1>💰Token Balances</h1>
-      <Skeleton loading={!assets}>
-        <Table
-          dataSource={assets}
-          columns={columns}
-          rowKey={(record) => {
-            return record.token_address;
-          }}
-        />
-      </Skeleton>
+    <div className="w-full max-w-5xl px-1 py-2">
+      <h1 className="mb-4 text-2xl font-bold text-fg">💰 Token Balances</h1>
+      <div className="overflow-hidden rounded-2xl border border-ink-border shadow-card">
+        <Skeleton loading={!assets} active className="p-6">
+          <Table
+            dataSource={assets}
+            columns={columns}
+            scroll={{ x: true }}
+            rowKey={(record) => {
+              return record.token_address;
+            }}
+          />
+        </Skeleton>
+      </div>
     </div>
   );
 }

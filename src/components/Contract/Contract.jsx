@@ -25,7 +25,7 @@ export default function Contract() {
   /** Returns true in case if contract is deployed to active chain in wallet */
   const isDeployedToActiveChain = useMemo(() => {
     if (!contract?.networks) return undefined;
-    return [parseInt(chainId, 16)] in contract.networks;
+    return parseInt(chainId, 16) in contract.networks;
   }, [contract, chainId]);
 
   const contractAddress = useMemo(() => {
@@ -43,15 +43,7 @@ export default function Contract() {
   };
 
   return (
-    <div
-      style={{
-        margin: "auto",
-        display: "flex",
-        gap: "20px",
-        marginTop: "25",
-        width: "70vw",
-      }}
-    >
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 lg:flex-row">
       <Card
         title={
           <div
@@ -71,12 +63,7 @@ export default function Contract() {
           </div>
         }
         size="large"
-        style={{
-          width: "60%",
-          boxShadow: "0 0.5rem 1.2rem rgb(189 197 209 / 20%)",
-          border: "1px solid #e7eaf3",
-          borderRadius: "0.5rem",
-        }}
+        className="w-full shadow-card lg:w-3/5"
       >
         <ContractResolver setContract={setContract} contract={contract} />
 
@@ -89,7 +76,6 @@ export default function Contract() {
 
               for (let method of contract?.abi) {
                 if (method.name !== name) continue;
-                console.log(method);
                 if (method.stateMutability === "view") isView = true;
               }
 
@@ -114,7 +100,6 @@ export default function Contract() {
                     message: "🔊 New Transaction",
                     description: `${hash}`,
                   });
-                  console.log("🔊 New Transaction", hash);
                 })
                   .on("receipt", (receipt) => {
                     setResponses({
@@ -125,13 +110,11 @@ export default function Contract() {
                       message: "📃 New Receipt",
                       description: `${receipt.transactionHash}`,
                     });
-                    console.log("🔊 New Receipt: ", receipt);
                   })
                   .on("error", (error) => {
                     console.error(error);
                   });
               } else {
-                console.log("options22", options);
                 Moralis.executeFunction(options).then((response) =>
                   setResponses({
                     ...responses,
@@ -154,12 +137,7 @@ export default function Contract() {
       <Card
         title={"Contract Events"}
         size="large"
-        style={{
-          width: "40%",
-          boxShadow: "0 0.5rem 1.2rem rgb(189 197 209 / 20%)",
-          border: "1px solid #e7eaf3",
-          borderRadius: "0.5rem",
-        }}
+        className="w-full self-start shadow-card lg:w-2/5"
       >
         {data.map((event, key) => (
           <Card

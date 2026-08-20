@@ -1,5 +1,6 @@
 node_modules/
 build/
-yarn.lock
+dist/
+data/
 package-lock.json
 Truffle/

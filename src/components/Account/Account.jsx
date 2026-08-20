@@ -1,88 +1,47 @@
-import { useMoralis } from "react-moralis";
-import { getEllipsisTxt } from "helpers/formatters";
-import Blockie from "../Blockie";
-import { Button, Card, Modal } from "antd";
 import { useState } from "react";
-import Address from "../Address/Address";
+import { useMoralis } from "react-moralis";
+import { Button, Card, Modal } from "antd";
 import { SelectOutlined } from "@ant-design/icons";
-import { getExplorer } from "helpers/networks";
 import Text from "antd/lib/typography/Text";
+import { getEllipsisTxt } from "helpers/formatters";
+import { getExplorer } from "helpers/networks";
+import Blockie from "../Blockie";
+import Address from "../Address/Address";
 import { connectors } from "./config";
-const styles = {
-  account: {
-    height: "42px",
-    padding: "0 15px",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    width: "fit-content",
-    borderRadius: "12px",
-    backgroundColor: "rgb(244, 244, 244)",
-    cursor: "pointer",
-  },
-  text: {
-    color: "#21BF96",
-  },
-  connector: {
-    alignItems: "center",
-    display: "flex",
-    flexDirection: "column",
-    height: "auto",
-    justifyContent: "center",
-    marginLeft: "auto",
-    marginRight: "auto",
-    padding: "20px 5px",
-    cursor: "pointer",
-  },
-  icon: {
-    alignSelf: "center",
-    fill: "rgb(40, 13, 95)",
-    flexShrink: "0",
-    marginBottom: "8px",
-    height: "30px",
-  },
-};
 
 function Account() {
   const { authenticate, isAuthenticated, account, chainId, logout } =
     useMoralis();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isAuthModalVisible, setIsAuthModalVisible] = useState(false);
+  const explorer = getExplorer(chainId);
 
   if (!isAuthenticated || !account) {
     return (
       <>
-        <div onClick={() => setIsAuthModalVisible(true)}>
-          <p style={styles.text}>Authenticate</p>
-        </div>
+        <Button
+          type="primary"
+          className="rounded-xl font-semibold"
+          onClick={() => setIsAuthModalVisible(true)}
+        >
+          Connect Wallet
+        </Button>
         <Modal
           visible={isAuthModalVisible}
           footer={null}
           onCancel={() => setIsAuthModalVisible(false)}
-          bodyStyle={{
-            padding: "15px",
-            fontSize: "17px",
-            fontWeight: "500",
-          }}
-          style={{ fontSize: "16px", fontWeight: "500" }}
-          width="340px"
+          width={340}
+          bodyStyle={{ padding: "24px 16px" }}
         >
-          <div
-            style={{
-              padding: "10px",
-              display: "flex",
-              justifyContent: "center",
-              fontWeight: "700",
-              fontSize: "20px",
-            }}
-          >
+          <div className="mb-4 text-center text-lg font-bold">
             Connect Wallet
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+          <div className="grid grid-cols-2 gap-1">
             {connectors.map(({ title, icon, connectorId }, key) => (
-              <div
-                style={styles.connector}
+              <button
                 key={key}
+                type="button"
+                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-0 bg-transparent px-1 py-5 hover:bg-ink-overlay"
                 onClick={async () => {
                   try {
                     await authenticate({ provider: connectorId });
@@ -93,11 +52,14 @@ function Account() {
                   }
                 }}
               >
-                <img src={icon} alt={title} style={styles.icon} />
-                <Text style={{ fontSize: "14px" }}>{title}</Text>
-              </div>
+                <img src={icon} alt={title} className="h-8" />
+                <Text className="text-sm">{title}</Text>
+              </button>
             ))}
           </div>
+          <p className="mb-0 mt-4 text-center text-xs text-fg-muted">
+            More wallets (WalletConnect v2) arrive with the data-layer upgrade.
+          </p>
         </Modal>
       </>
     );
@@ -105,24 +67,11 @@ function Account() {
 
   return (
     <>
-      {/* <button
-        onClick={async () => {
-          try {
-            console.log("change")
-            await web3._provider.request({
-              method: "wallet_switchEthereumChain",
-              params: [{ chainId: "0x38" }],
-            });
-            console.log("changed")
-          } catch (e) {
-            console.error(e);
-          }
-        }}
+      <div
+        className="flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-ink-border bg-ink-overlay px-3"
+        onClick={() => setIsModalVisible(true)}
       >
-        Hi
-      </button> */}
-      <div style={styles.account} onClick={() => setIsModalVisible(true)}>
-        <p style={{ marginRight: "5px", ...styles.text }}>
+        <p className="mb-0 font-semibold text-brand">
           {getEllipsisTxt(account, 6)}
         </p>
         <Blockie currentWallet scale={3} />
@@ -131,49 +80,34 @@ function Account() {
         visible={isModalVisible}
         footer={null}
         onCancel={() => setIsModalVisible(false)}
-        bodyStyle={{
-          padding: "15px",
-          fontSize: "17px",
-          fontWeight: "500",
-        }}
-        style={{ fontSize: "16px", fontWeight: "500" }}
-        width="400px"
+        width={400}
+        bodyStyle={{ padding: 16 }}
       >
-        Account
-        <Card
-          style={{
-            marginTop: "10px",
-            borderRadius: "1rem",
-          }}
-          bodyStyle={{ padding: "15px" }}
-        >
+        <div className="text-base font-semibold">Account</div>
+        <Card className="mt-3" bodyStyle={{ padding: 16 }}>
           <Address
             avatar="left"
             size={6}
             copyable
             style={{ fontSize: "20px" }}
           />
-          <div style={{ marginTop: "10px", padding: "0 10px" }}>
-            <a
-              href={`${getExplorer(chainId)}/address/${account}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <SelectOutlined style={{ marginRight: "5px" }} />
-              View on Explorer
-            </a>
-          </div>
+          {explorer && (
+            <div className="mt-3 px-1">
+              <a
+                href={`${explorer}/address/${account}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <SelectOutlined className="mr-1.5" />
+                View on Explorer
+              </a>
+            </div>
+          )}
         </Card>
         <Button
           size="large"
           type="primary"
-          style={{
-            width: "100%",
-            marginTop: "10px",
-            borderRadius: "0.5rem",
-            fontSize: "16px",
-            fontWeight: "500",
-          }}
+          className="mt-3 w-full rounded-xl font-semibold"
           onClick={async () => {
             await logout();
             window.localStorage.removeItem("connectorId");

@@ -1,14 +1,16 @@
 import { useMoralis, useNativeBalance } from "react-moralis";
 
-function NativeBalance(props) {
+function NativeBalance({ className = "", ...props }) {
   const { data: balance } = useNativeBalance(props);
   const { account, isAuthenticated } = useMoralis();
 
-  if (!account || !isAuthenticated) return null;
+  if (!account || !isAuthenticated || !balance?.formatted) return null;
 
   return (
-    <div style={{ textAlign: "center", whiteSpace: "nowrap" }}>
-      Wallet Bal : {balance.formatted}
+    <div
+      className={`whitespace-nowrap text-sm font-semibold text-fg-muted ${className}`}
+    >
+      {balance.formatted}
     </div>
   );
 }

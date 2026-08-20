@@ -12,7 +12,7 @@ const useTokenPrice = (options) => {
   const [tokenPrice, setTokenPrice] = useState();
 
   useEffect(() => {
-    if (!options || !isInitialized) return null;
+    if (!options || !isInitialized) return;
     fetchTokenPrice(options).then((price) => {
       price.usdPrice = c2.format(price.usdPrice);
       const { value, decimals, symbol } = price.nativePrice;
@@ -25,9 +25,6 @@ const useTokenPrice = (options) => {
   const fetchTokenPrice = async (options) => {
     const { chain, address } = options;
     const tokenAddress = IsNative(address) ? getWrappedNative(chain) : address;
-    console.log("chain", chain);
-    console.log("address", address);
-    console.log("tokenAddress", tokenAddress);
     return token
       .getTokenPrice({ chain, address: tokenAddress })
       .then((result) => result);

@@ -31,7 +31,7 @@ modern swap/price API (1inch REST or 0x). Contributions welcome.
 
 ## Quick start
 
-Requires **Node 18+**.
+Requires **Node 22+**. Production builds run on Node 24 (Vercel and CI).
 
 ```sh
 git clone https://github.com/Asit0007/Crypto-DEX.git

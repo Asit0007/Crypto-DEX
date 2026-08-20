@@ -1,13 +1,13 @@
-import { useMoralis } from "react-moralis";
+import { useAccount } from "wagmi";
 
 /**
  * Data views need a connected wallet. Without this guard they render an
  * endless skeleton, because the underlying hooks never resolve.
  */
 function RequireWallet({ title, children }) {
-  const { isAuthenticated, account } = useMoralis();
+  const { address, isConnected } = useAccount();
 
-  if (isAuthenticated && account) return children;
+  if (isConnected && address) return children;
 
   return (
     <div className="w-full max-w-5xl px-1 py-2">

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { getEllipsisTxt } from "../../helpers/formatters";
 import Blockie from "../Blockie";
 import "./identicon.css";
-import { useMoralis } from "react-moralis";
+import { useAccount } from "wagmi";
 import { Skeleton } from "antd";
 
 const styles = {
@@ -18,13 +18,13 @@ const styles = {
 };
 
 function Address(props) {
-  const { account, isAuthenticated } = useMoralis();
+  const { address: account, isConnected } = useAccount();
   const [address, setAddress] = useState();
   const [isClicked, setIsClicked] = useState(false);
 
   useEffect(() => {
-    setAddress(props?.address || (isAuthenticated && account));
-  }, [account, isAuthenticated, props]);
+    setAddress(props?.address || (isConnected && account));
+  }, [account, isConnected, props]);
 
   if (!address)
     return (

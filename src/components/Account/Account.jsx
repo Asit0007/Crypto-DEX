@@ -1,22 +1,25 @@
 import { useState } from "react";
-import { useMoralis } from "react-moralis";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { Button, Card, Modal } from "antd";
 import { SelectOutlined } from "@ant-design/icons";
 import Text from "antd/lib/typography/Text";
 import { getEllipsisTxt } from "helpers/formatters";
 import { getExplorer } from "helpers/networks";
+import { toHexChainId, hasWalletConnect } from "helpers/wagmi";
 import Blockie from "../Blockie";
 import Address from "../Address/Address";
-import { connectors } from "./config";
+import { getConnectorIcon } from "./config";
 
 function Account() {
-  const { authenticate, isAuthenticated, account, chainId, logout } =
-    useMoralis();
+  const { address, isConnected, chainId } = useAccount();
+  const { connectors, connect, isPending, error } = useConnect();
+  const { disconnect } = useDisconnect();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isAuthModalVisible, setIsAuthModalVisible] = useState(false);
-  const explorer = getExplorer(chainId);
+  // networks.js is keyed by hex chain id; wagmi reports decimal.
+  const explorer = getExplorer(toHexChainId(chainId));
 
-  if (!isAuthenticated || !account) {
+  if (!isConnected || !address) {
     return (
       <>
         <Button
@@ -37,29 +40,38 @@ function Account() {
             Connect Wallet
           </div>
           <div className="grid grid-cols-2 gap-1">
-            {connectors.map(({ title, icon, connectorId }, key) => (
+            {connectors.map((connector) => (
               <button
-                key={key}
+                key={connector.uid}
                 type="button"
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-0 bg-transparent px-1 py-5 hover:bg-ink-overlay"
-                onClick={async () => {
-                  try {
-                    await authenticate({ provider: connectorId });
-                    window.localStorage.setItem("connectorId", connectorId);
-                    setIsAuthModalVisible(false);
-                  } catch (e) {
-                    console.error(e);
-                  }
-                }}
+                disabled={isPending}
+                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-0 bg-transparent px-1 py-5 hover:bg-ink-overlay disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() =>
+                  connect(
+                    { connector },
+                    { onSuccess: () => setIsAuthModalVisible(false) },
+                  )
+                }
               >
-                <img src={icon} alt={title} className="h-8" />
-                <Text className="text-sm">{title}</Text>
+                <img
+                  src={getConnectorIcon(connector)}
+                  alt={connector.name}
+                  className="h-8"
+                />
+                <Text className="text-sm">{connector.name}</Text>
               </button>
             ))}
           </div>
-          <p className="mb-0 mt-4 text-center text-xs text-fg-muted">
-            More wallets (WalletConnect v2) arrive with the data-layer upgrade.
-          </p>
+          {error && (
+            <p className="mb-0 mt-4 text-center text-xs text-red-400">
+              {error.shortMessage || error.message}
+            </p>
+          )}
+          {!hasWalletConnect && (
+            <p className="mb-0 mt-4 text-center text-xs text-fg-muted">
+              Set VITE_WALLETCONNECT_PROJECT_ID to enable mobile wallets.
+            </p>
+          )}
         </Modal>
       </>
     );
@@ -72,7 +84,7 @@ function Account() {
         onClick={() => setIsModalVisible(true)}
       >
         <p className="mb-0 font-semibold text-brand">
-          {getEllipsisTxt(account, 6)}
+          {getEllipsisTxt(address, 6)}
         </p>
         <Blockie currentWallet scale={3} />
       </div>
@@ -94,7 +106,7 @@ function Account() {
           {explorer && (
             <div className="mt-3 px-1">
               <a
-                href={`${explorer}/address/${account}`}
+                href={`${explorer}/address/${address}`}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -108,9 +120,8 @@ function Account() {
           size="large"
           type="primary"
           className="mt-3 w-full rounded-xl font-semibold"
-          onClick={async () => {
-            await logout();
-            window.localStorage.removeItem("connectorId");
+          onClick={() => {
+            disconnect();
             setIsModalVisible(false);
           }}
         >

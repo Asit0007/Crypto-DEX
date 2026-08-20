@@ -1,5 +1,3 @@
-import { useEffect } from "react";
-import { useMoralis } from "react-moralis";
 import {
   BrowserRouter as Router,
   Switch,
@@ -23,16 +21,6 @@ import RequireWallet from "components/RequireWallet";
 import MenuItems from "./components/MenuItems";
 
 const App = ({ isServerInfo }) => {
-  const { isWeb3Enabled, enableWeb3, isAuthenticated, isWeb3EnableLoading } =
-    useMoralis();
-
-  useEffect(() => {
-    const connectorId = window.localStorage.getItem("connectorId");
-    if (isAuthenticated && !isWeb3Enabled && !isWeb3EnableLoading)
-      enableWeb3({ provider: connectorId });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, isWeb3Enabled]);
-
   return (
     <Router>
       <div className="flex min-h-screen flex-col">

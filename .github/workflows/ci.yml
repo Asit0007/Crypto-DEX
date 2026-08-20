@@ -1,0 +1,23 @@
+name: CI
+
+# Deployment is handled by Vercel's Git integration, not here.
+# This workflow only gates code quality on PRs and pushes to main.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run lint:check
+      - run: npm run prettier:check
+      - run: npm run build

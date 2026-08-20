@@ -38,7 +38,7 @@ git clone https://github.com/Asit0007/Crypto-DEX.git
 cd Crypto-DEX
 npm install
 cp .env.example .env   # fill in your Moralis credentials
-npm run dev            # http://localhost:5173/Crypto-DEX/
+npm run dev            # http://localhost:5173
 ```
 
 Without a `.env` the app boots into an onboarding page instead of crashing.
@@ -50,7 +50,6 @@ Without a `.env` the app boots into an onboarding page instead of crashing.
 | `npm run dev`                             | Vite dev server                                                          |
 | `npm run build`                           | Production build → `dist/`                                               |
 | `npm run preview`                         | Preview the production build                                             |
-| `npm run deploypage`                      | Build + publish `dist/` to GitHub Pages                                  |
 | `npm run devchain`                        | Local Ganache chain on `:7545` (chain id `1337`)                         |
 | `npm run migrate`                         | Compile + deploy the demo Truffle contract, copy its ABI to the frontend |
 | `npm run lint:check` / `lint:fix`         | ESLint                                                                   |
@@ -68,9 +67,12 @@ Then connect your wallet, switch to **Local Chain** (`0x539`), and open `/contra
 
 ## Deployment
 
-Pushes to `main` build and deploy to GitHub Pages automatically via GitHub
-Actions. Deep links work through a `404.html` SPA redirect. Manual deploys:
-`npm run deploypage`.
+Hosted on **Vercel**, deployed automatically from `main` via Vercel's Git
+integration. Pull requests get their own preview deployment. SPA routing and
+cache headers are configured in `vercel.json`.
+
+GitHub Actions (`.github/workflows/ci.yml`) runs lint, format, and build
+checks on every PR — it does not deploy.
 
 ## Security notes
 

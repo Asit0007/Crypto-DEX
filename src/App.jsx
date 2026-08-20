@@ -34,7 +34,7 @@ const App = ({ isServerInfo }) => {
   }, [isAuthenticated, isWeb3Enabled]);
 
   return (
-    <Router basename={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+    <Router>
       <div className="flex min-h-screen flex-col">
         <header className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-ink-border bg-ink/80 px-4 py-3 backdrop-blur-md sm:px-6">
           <Logo />

@@ -3,9 +3,9 @@ import react from "@vitejs/plugin-react";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { fileURLToPath, URL } from "node:url";
 
-// GitHub Pages serves the site from https://asit0007.github.io/Crypto-DEX/
+// Deployed on Vercel from the domain root; SPA rewrites live in vercel.json.
 export default defineConfig({
-  base: "/Crypto-DEX/",
+  base: "/",
   plugins: [
     react(),
     // moralis v1 / web3 libs expect node globals in the browser bundle

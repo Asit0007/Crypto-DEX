@@ -1,19 +1,43 @@
 import { Card, Form, notification } from "antd";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Address from "components/Address/Address";
-import { useMoralis, useMoralisQuery } from "react-moralis";
+import { readContract } from "wagmi/actions";
+import {
+  useChainId,
+  useConfig,
+  useWaitForTransactionReceipt,
+  useWatchContractEvent,
+  useWriteContract,
+} from "wagmi";
 import { getEllipsisTxt } from "helpers/formatters";
 import ContractMethods from "./ContractMethods";
 import ContractResolver from "./ContractResolver";
 
+/**
+ * Antd form fields are always strings; viem wants correctly typed args in ABI
+ * order. Coerce per input type rather than trusting the string through.
+ */
+const coerceArg = (value, type) => {
+  if (type.endsWith("]")) return JSON.parse(value);
+  if (type.startsWith("uint") || type.startsWith("int")) return BigInt(value);
+  if (type === "bool") return value === "true";
+  return value;
+};
+
+const buildArgs = (method, params) =>
+  method.inputs.map((input) => coerceArg(params[input.name], input.type));
+
 export default function Contract() {
-  const { Moralis, chainId } = useMoralis();
+  const chainId = useChainId();
+  const config = useConfig();
   const [responses, setResponses] = useState({});
   const [contract, setContract] = useState();
+  const [events, setEvents] = useState([]);
+  const [pending, setPending] = useState();
 
-  /**Moralis Live query for displaying contract's events*/
-  const { data } = useMoralisQuery("Events", (query) => query, [], {
-    live: true,
+  const { mutateAsync: writeContract } = useWriteContract();
+  const { data: receipt } = useWaitForTransactionReceipt({
+    hash: pending?.hash,
   });
 
   /** Automatically builds write and read components for interacting with contract*/
@@ -25,13 +49,43 @@ export default function Contract() {
   /** Returns true in case if contract is deployed to active chain in wallet */
   const isDeployedToActiveChain = useMemo(() => {
     if (!contract?.networks) return undefined;
-    return parseInt(chainId, 16) in contract.networks;
+    return chainId in contract.networks;
   }, [contract, chainId]);
 
   const contractAddress = useMemo(() => {
     if (!isDeployedToActiveChain) return null;
-    return contract.networks[parseInt(chainId, 16)]?.["address"] || null;
+    return contract.networks[chainId]?.["address"] || null;
   }, [chainId, contract, isDeployedToActiveChain]);
+
+  /**
+   * Live event feed. This replaces the Moralis "Events" live query, which read
+   * a server-side table that no longer exists. viem watches from the current
+   * block onward, so there is no history — only events emitted while this page
+   * is open.
+   */
+  useWatchContractEvent({
+    address: contractAddress ?? undefined,
+    abi: contract?.abi,
+    enabled: Boolean(contractAddress && contract?.abi),
+    onLogs: (logs) => setEvents((prev) => [...logs, ...prev].slice(0, 20)),
+  });
+
+  useEffect(() => {
+    setEvents([]);
+  }, [contractAddress]);
+
+  useEffect(() => {
+    if (!receipt || !pending) return;
+    setResponses((prev) => ({
+      ...prev,
+      [pending.name]: { result: null, isLoading: false },
+    }));
+    openNotification({
+      message: "📃 New Receipt",
+      description: `${receipt.transactionHash}`,
+    });
+    setPending(undefined);
+  }, [receipt, pending]);
 
   /** Default function for showing notifications*/
   const openNotification = ({ message, description }) => {
@@ -71,56 +125,52 @@ export default function Contract() {
           <Form.Provider
             onFormFinish={async (name, { forms }) => {
               const params = forms[name].getFieldsValue();
+              const method = contract.abi.find(
+                (item) => item.type === "function" && item.name === name,
+              );
+              const isView = ["view", "pure"].includes(method?.stateMutability);
 
-              let isView = false;
+              try {
+                const args = buildArgs(method, params);
 
-              for (let method of contract?.abi) {
-                if (method.name !== name) continue;
-                if (method.stateMutability === "view") isView = true;
-              }
+                if (isView) {
+                  const result = await readContract(config, {
+                    address: contractAddress,
+                    abi: contract.abi,
+                    functionName: name,
+                    args,
+                  });
+                  setResponses((prev) => ({
+                    ...prev,
+                    [name]: { result, isLoading: false },
+                  }));
+                  return;
+                }
 
-              const options = {
-                contractAddress,
-                functionName: name,
-                abi: contract?.abi,
-                params,
-              };
-
-              if (!isView) {
-                const tx = await Moralis.executeFunction({
-                  awaitReceipt: false,
-                  ...options,
+                setResponses((prev) => ({
+                  ...prev,
+                  [name]: { result: null, isLoading: true },
+                }));
+                const hash = await writeContract({
+                  address: contractAddress,
+                  abi: contract.abi,
+                  functionName: name,
+                  args,
                 });
-                tx.on("transactionHash", (hash) => {
-                  setResponses({
-                    ...responses,
-                    [name]: { result: null, isLoading: true },
-                  });
-                  openNotification({
-                    message: "🔊 New Transaction",
-                    description: `${hash}`,
-                  });
-                })
-                  .on("receipt", (receipt) => {
-                    setResponses({
-                      ...responses,
-                      [name]: { result: null, isLoading: false },
-                    });
-                    openNotification({
-                      message: "📃 New Receipt",
-                      description: `${receipt.transactionHash}`,
-                    });
-                  })
-                  .on("error", (error) => {
-                    console.error(error);
-                  });
-              } else {
-                Moralis.executeFunction(options).then((response) =>
-                  setResponses({
-                    ...responses,
-                    [name]: { result: response, isLoading: false },
-                  }),
-                );
+                setPending({ hash, name });
+                openNotification({
+                  message: "🔊 New Transaction",
+                  description: `${hash}`,
+                });
+              } catch (error) {
+                setResponses((prev) => ({
+                  ...prev,
+                  [name]: { result: null, isLoading: false },
+                }));
+                openNotification({
+                  message: "📃 Error",
+                  description: `${error.shortMessage || error.message}`,
+                });
               }
             }}
           >
@@ -131,7 +181,7 @@ export default function Contract() {
           </Form.Provider>
         )}
         {isDeployedToActiveChain === false && (
-          <>{`The contract is not deployed to the active ${chainId} chain. Switch your active chain or try agan later.`}</>
+          <>{`The contract is not deployed to the active chain (${chainId}). Switch your active chain or try again later.`}</>
         )}
       </Card>
       <Card
@@ -139,14 +189,21 @@ export default function Contract() {
         size="large"
         className="w-full self-start shadow-card lg:w-2/5"
       >
-        {data.map((event, key) => (
+        {events.length === 0 && (
+          <p className="text-sm text-fg-muted">
+            {contractAddress
+              ? "Watching for new events. Only events emitted while this page is open appear here — there is no history."
+              : "Load a contract deployed to the active chain to watch its events."}
+          </p>
+        )}
+        {events.map((event, key) => (
           <Card
-            title={"Transfer event"}
+            title={`${event.eventName} event`}
             size="small"
             style={{ marginBottom: "20px" }}
-            key={key}
+            key={`${event.transactionHash}-${event.logIndex ?? key}`}
           >
-            {getEllipsisTxt(event.attributes.transaction_hash, 14)}
+            {getEllipsisTxt(event.transactionHash, 14)}
           </Card>
         ))}
       </Card>

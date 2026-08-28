@@ -1,16 +1,22 @@
-import { useMoralis, useNativeBalance } from "react-moralis";
+import { useAccount, useBalance } from "wagmi";
 
-function NativeBalance({ className = "", ...props }) {
-  const { data: balance } = useNativeBalance(props);
-  const { account, isAuthenticated } = useMoralis();
+/**
+ * The connected wallet's native-coin balance on the active chain.
+ *
+ * Reads straight from the chain's RPC via wagmi — no indexer and no API key,
+ * which is why this was the first read hook migrated off Moralis.
+ */
+function NativeBalance({ className = "" }) {
+  const { address, isConnected } = useAccount();
+  const { data: balance } = useBalance({ address });
 
-  if (!account || !isAuthenticated || !balance?.formatted) return null;
+  if (!isConnected || !balance) return null;
 
   return (
     <div
       className={`whitespace-nowrap text-sm font-semibold text-fg-muted ${className}`}
     >
-      {balance.formatted}
+      {`${parseFloat(balance.formatted).toFixed(4)} ${balance.symbol}`}
     </div>
   );
 }

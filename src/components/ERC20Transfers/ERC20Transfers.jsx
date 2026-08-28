@@ -1,20 +1,22 @@
-import { useMoralis } from "react-moralis";
-import { getEllipsisTxt } from "../../helpers/formatters";
-import { getExplorer } from "../../helpers/networks";
 import { Skeleton, Table } from "antd";
 import { useERC20Transfers } from "hooks/useERC20Transfers";
+import { getNetworkConfig } from "helpers/wagmi";
+import { getEllipsisTxt } from "../../helpers/formatters";
+import { getExplorer } from "../../helpers/networks";
+import DataNotice from "../DataNotice";
 
 function ERC20Transfers() {
-  const { ERC20Transfers, chainId } = useERC20Transfers();
-  const { Moralis } = useMoralis();
-  const explorer = getExplorer(chainId);
+  const { ERC20Transfers, chainId, isLoading, isSupported } =
+    useERC20Transfers();
+  // networks.js is keyed by hex chain id; wagmi hands us decimal.
+  const explorer = getExplorer(`0x${chainId.toString(16)}`);
 
   const columns = [
     {
       title: "Token",
-      dataIndex: "address",
-      key: "address",
-      render: (token) => getEllipsisTxt(token, 8),
+      dataIndex: "asset",
+      key: "asset",
+      render: (asset, item) => asset || getEllipsisTxt(item.address, 8),
     },
     {
       title: "From",
@@ -32,8 +34,8 @@ function ERC20Transfers() {
       title: "Value",
       dataIndex: "value",
       key: "value",
-      render: (value, item) =>
-        parseFloat(Moralis.Units.FromWei(value, item.decimals)).toFixed(6),
+      // Alchemy returns this already decimalised; raw wei is in rawContract.
+      render: (value) => (value == null ? "—" : value.toFixed(6)),
     },
     {
       title: "Hash",
@@ -50,23 +52,23 @@ function ERC20Transfers() {
     },
   ];
 
-  let key = 0;
   return (
     <div className="w-full max-w-5xl px-1 py-2">
       <h1 className="mb-4 text-2xl font-bold text-fg">💸 ERC-20 Transfers</h1>
-      <div className="overflow-hidden rounded-2xl border border-ink-border shadow-card">
-        <Skeleton loading={!ERC20Transfers} active className="p-6">
-          <Table
-            dataSource={ERC20Transfers}
-            columns={columns}
-            scroll={{ x: true }}
-            rowKey={(record) => {
-              key++;
-              return `${record.transaction_hash}-${key}`;
-            }}
-          />
-        </Skeleton>
-      </div>
+      {!isSupported ? (
+        <DataNotice chainName={getNetworkConfig(chainId)?.chainName} />
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-ink-border shadow-card">
+          <Skeleton loading={isLoading} active className="p-6">
+            <Table
+              dataSource={ERC20Transfers}
+              columns={columns}
+              scroll={{ x: true }}
+              rowKey={(record, index) => `${record.transaction_hash}-${index}`}
+            />
+          </Skeleton>
+        </div>
+      )}
     </div>
   );
 }

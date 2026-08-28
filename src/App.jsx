@@ -16,7 +16,6 @@ import Wallet from "components/Wallet";
 import NativeBalance from "components/NativeBalance";
 import QuickStart from "components/QuickStart";
 import Contract from "components/Contract/Contract";
-import Ramper from "components/Ramper";
 import RequireWallet from "components/RequireWallet";
 import MenuItems from "./components/MenuItems";
 
@@ -71,9 +70,6 @@ const App = ({ isServerInfo }) => {
               <RequireWallet title="💰 Token Balances">
                 <ERC20Balance />
               </RequireWallet>
-            </Route>
-            <Route path="/onramp">
-              <Ramper />
             </Route>
             <Route path="/erc20transfers">
               <RequireWallet title="💸 ERC-20 Transfers">

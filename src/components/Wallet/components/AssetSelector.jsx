@@ -1,30 +1,37 @@
 import { useERC20Balance } from "hooks/useERC20Balance";
-import { useMoralis, useNativeBalance } from "react-moralis";
+import { getNetworkConfig } from "helpers/wagmi";
 import { Image, Select } from "antd";
 import { useMemo } from "react";
+import { formatUnits } from "viem";
+import { useAccount, useBalance, useChainId } from "wagmi";
+
+export const NATIVE_ADDRESS = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 
 export default function AssetSelector({ setAsset, style }) {
+  const { address } = useAccount();
+  const chainId = useChainId();
   const { assets } = useERC20Balance();
-  const { data: nativeBalance, nativeToken } = useNativeBalance();
-  const { Moralis } = useMoralis();
+  const { data: nativeBalance } = useBalance({ address });
 
+  // Native comes from the RPC and is always available; the ERC-20 list is
+  // still on the sunset Moralis read layer, so treat it as optional rather
+  // than gating the whole selector on it (CLAUDE.md phase-2 step 5).
   const fullBalance = useMemo(() => {
-    if (!assets || !nativeBalance) return null;
+    if (!nativeBalance) return null;
     return [
-      ...assets,
       {
-        balance: nativeBalance.balance,
-        decimals: nativeToken.decimals,
-        name: nativeToken.name,
-        symbol: nativeToken.symbol,
-        token_address: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        balance: nativeBalance.value.toString(),
+        decimals: nativeBalance.decimals,
+        name: getNetworkConfig(chainId)?.currencyName || nativeBalance.symbol,
+        symbol: nativeBalance.symbol,
+        token_address: NATIVE_ADDRESS,
       },
+      ...(assets ?? []),
     ];
-  }, [assets, nativeBalance, nativeToken]);
+  }, [assets, nativeBalance, chainId]);
 
   function handleChange(value) {
-    const token = fullBalance.find((token) => token.token_address === value);
-    setAsset(token);
+    setAsset(fullBalance?.find((token) => token.token_address === value));
   }
 
   return (
@@ -66,8 +73,8 @@ export default function AssetSelector({ setAsset, style }) {
                   <p style={{ alignSelf: "right" }}>
                     (
                     {parseFloat(
-                      Moralis?.Units?.FromWei(item.balance, item.decimals),
-                    )?.toFixed(6)}
+                      formatUnits(BigInt(item.balance), item.decimals),
+                    ).toFixed(6)}
                     )
                   </p>
                 </div>

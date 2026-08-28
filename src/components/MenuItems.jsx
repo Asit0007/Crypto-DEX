@@ -10,7 +10,6 @@ const items = [
   { to: "/erc20transfers", icon: "💸", label: "Transfers" },
   { to: "/nftBalance", icon: "🖼", label: "NFTs" },
   { to: "/contract", icon: "📄", label: "Contract" },
-  { to: "/onramp", icon: "💵", label: "On-Ramp" },
   { to: "/quickstart", icon: "🚀", label: "Quick Start" },
 ];
 

@@ -2,23 +2,41 @@ import { CreditCardOutlined } from "@ant-design/icons";
 import { Button, Input, notification } from "antd";
 import Text from "antd/lib/typography/Text";
 import { useEffect, useState } from "react";
-import { useMoralis } from "react-moralis";
+import { erc20Abi, isAddress, parseEther, parseUnits } from "viem";
+import {
+  useSendTransaction,
+  useWaitForTransactionReceipt,
+  useWriteContract,
+} from "wagmi";
 import AddressInput from "../../AddressInput";
-import AssetSelector from "./AssetSelector";
-
-const NATIVE_ADDRESS = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+import AssetSelector, { NATIVE_ADDRESS } from "./AssetSelector";
 
 function Transfer() {
-  const { Moralis } = useMoralis();
   const [receiver, setReceiver] = useState();
   const [asset, setAsset] = useState();
   const [tx, setTx] = useState();
   const [amount, setAmount] = useState();
+  const [hash, setHash] = useState();
   const [isPending, setIsPending] = useState(false);
+
+  // wagmi v3 exposes these as `mutateAsync`; the `sendTransactionAsync` /
+  // `writeContractAsync` aliases are deprecated.
+  const { mutateAsync: sendTransaction } = useSendTransaction();
+  const { mutateAsync: writeContract } = useWriteContract();
+  const { data: receipt } = useWaitForTransactionReceipt({ hash });
 
   useEffect(() => {
     asset && amount && receiver ? setTx({ amount, receiver, asset }) : setTx();
   }, [asset, amount, receiver]);
+
+  useEffect(() => {
+    if (!receipt) return;
+    openNotification({
+      message: "📃 New Receipt",
+      description: `${receipt.transactionHash}`,
+    });
+    setIsPending(false);
+  }, [receipt]);
 
   const openNotification = ({ message, description }) => {
     notification.open({
@@ -31,52 +49,41 @@ function Transfer() {
   async function transfer() {
     const { amount, receiver, asset } = tx;
 
-    let options = {};
-
-    switch (asset.token_address) {
-      case NATIVE_ADDRESS:
-        options = {
-          native: "native",
-          amount: Moralis.Units.ETH(amount),
-          receiver,
-          awaitReceipt: false,
-        };
-        break;
-      default:
-        options = {
-          type: "erc20",
-          amount: Moralis.Units.Token(amount, asset.decimals),
-          receiver,
-          contractAddress: asset.token_address,
-          awaitReceipt: false,
-        };
+    if (!isAddress(receiver)) {
+      openNotification({
+        message: "📃 Error",
+        description: "That recipient is not a valid address.",
+      });
+      return;
     }
 
     setIsPending(true);
-    const txStatus = await Moralis.transfer(options);
+    try {
+      const txHash =
+        asset.token_address === NATIVE_ADDRESS
+          ? await sendTransaction({
+              to: receiver,
+              value: parseEther(amount),
+            })
+          : await writeContract({
+              address: asset.token_address,
+              abi: erc20Abi,
+              functionName: "transfer",
+              args: [receiver, parseUnits(amount, asset.decimals)],
+            });
 
-    txStatus
-      .on("transactionHash", (hash) => {
-        openNotification({
-          message: "🔊 New Transaction",
-          description: `${hash}`,
-        });
-      })
-      .on("receipt", (receipt) => {
-        openNotification({
-          message: "📃 New Receipt",
-          description: `${receipt.transactionHash}`,
-        });
-        setIsPending(false);
-      })
-      .on("error", (error) => {
-        openNotification({
-          message: "📃 Error",
-          description: `${error.message}`,
-        });
-        console.error(error);
-        setIsPending(false);
+      setHash(txHash);
+      openNotification({
+        message: "🔊 New Transaction",
+        description: `${txHash}`,
       });
+    } catch (error) {
+      openNotification({
+        message: "📃 Error",
+        description: `${error.shortMessage || error.message}`,
+      });
+      setIsPending(false);
+    }
   }
 
   return (

@@ -1,93 +1,60 @@
-import { useEffect, useState } from "react";
-import { useMoralis } from "react-moralis";
 import { notification } from "antd";
 
-const NATIVE_ADDRESS = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+/**
+ * Swap engine — currently unavailable, deliberately and visibly.
+ *
+ * This hook used to be a thin wrapper over `Moralis.Plugins.oneInch`, a server-side
+ * plugin that ran on a Moralis v1 server. Moralis sunset v1 hosting, so that plugin
+ * has had nothing to call for a long time: the swap path in this app was already
+ * dead, it just failed at runtime instead of saying so.
+ *
+ * It was removed rather than left in place because of what it dragged in. `moralis`
+ * and `react-moralis` pull `ethers@5.6.0`, and through it `elliptic` and
+ * `crypto-js@4.1.1` — six criticals in the *production* bundle of an app that asks
+ * people to connect a wallet. `elliptic`'s advisory range is `*`: no version of it is
+ * fixed, so no amount of pinning helped and the only real fix was dropping the
+ * dependency. wagmi/viem sign with `@noble/curves` and do not need it.
+ *
+ * What replaces it: nothing yet. 1inch's current API (v5/v6) is a direct REST call
+ * that needs an API key from portal.1inch.dev, plus `sendTransaction` through wagmi
+ * for the approve and swap steps. That is a real piece of work and it is not a
+ * security fix, so it is tracked rather than rushed — see README "Swap: what it takes
+ * to turn this back on".
+ *
+ * The interface is kept exactly as it was so `DEX.jsx` needs no restructuring when
+ * it is implemented: fill in the three functions and delete this note.
+ */
 
-const notify = (type, message, description) =>
-  notification[type]({ message, description, placement: "bottomRight" });
+const SWAP_DISABLED_REASON =
+  "Swapping is disabled. It ran on a Moralis v1 plugin whose servers are gone; " +
+  "reconnecting it needs a 1inch API key. Quotes and swaps are off until then.";
 
-const useInchDex = (chain) => {
-  const { Moralis, account } = useMoralis();
-  const [tokenList, setTokenlist] = useState();
-
-  useEffect(() => {
-    if (!Moralis?.Plugins?.oneInch) return;
-    Moralis.Plugins.oneInch
-      .getSupportedTokens({ chain })
-      .then((tokens) => setTokenlist(tokens.tokens))
-      .catch(() => setTokenlist({}));
-  }, [Moralis, Moralis.Plugins, chain]);
-
-  const getQuote = (params) =>
-    Moralis.Plugins.oneInch.quote({
-      chain: params.chain,
-      fromTokenAddress: params.fromToken.address,
-      toTokenAddress: params.toToken.address,
-      amount: Moralis.Units.Token(
-        params.fromAmount,
-        params.fromToken.decimals,
-      ).toString(),
+const useInchDex = () => {
+  const notifyDisabled = () =>
+    notification.info({
+      message: "Swapping is off",
+      description: SWAP_DISABLED_REASON,
+      placement: "bottomRight",
+      duration: 8,
     });
 
-  async function trySwap(params, slippage = 1) {
-    const { fromToken, toToken, fromAmount, chain } = params;
-    const amount = Moralis.Units.Token(
-      fromAmount,
-      fromToken.decimals,
-    ).toString();
-    try {
-      if (fromToken.address !== NATIVE_ADDRESS) {
-        const allowance = await Moralis.Plugins.oneInch.hasAllowance({
-          chain,
-          fromTokenAddress: fromToken.address,
-          fromAddress: account,
-          amount,
-        });
-        if (!allowance) {
-          // Bounded approval: only the amount being swapped, never unlimited.
-          await Moralis.Plugins.oneInch.approve({
-            chain,
-            tokenAddress: fromToken.address,
-            fromAddress: account,
-            amount,
-          });
-          notify(
-            "success",
-            "Approval granted",
-            `Approved ${fromAmount} ${fromToken.symbol} for swapping.`,
-          );
-        }
-      }
-      const receipt = await doSwap(params, slippage);
-      if (receipt?.error || receipt?.statusCode >= 400)
-        throw new Error(receipt?.message || "Swap failed");
-      notify(
-        "success",
-        "Swap complete",
-        `Swapped ${fromAmount} ${fromToken.symbol} for ${toToken.symbol}.`,
-      );
-      return receipt;
-    } catch (e) {
-      notify("error", "Swap failed", e.message);
-    }
-  }
+  // An empty token list is what DEX.jsx already renders a chooser from, so the
+  // modal opens to "no tokens" rather than throwing.
+  const tokenList = undefined;
 
-  function doSwap(params, slippage) {
-    return Moralis.Plugins.oneInch.swap({
-      chain: params.chain,
-      fromTokenAddress: params.fromToken.address,
-      toTokenAddress: params.toToken.address,
-      amount: Moralis.Units.Token(
-        params.fromAmount,
-        params.fromToken.decimals,
-      ).toString(),
-      fromAddress: account,
-      slippage,
-    });
-  }
+  const getQuote = async () => undefined;
 
-  return { getQuote, trySwap, tokenList };
+  const trySwap = async () => {
+    notifyDisabled();
+    return undefined;
+  };
+
+  return {
+    getQuote,
+    trySwap,
+    tokenList,
+    swapDisabledReason: SWAP_DISABLED_REASON,
+  };
 };
 
 export default useInchDex;

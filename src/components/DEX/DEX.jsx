@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
-import { useMoralis, useTokenPrice } from "react-moralis";
+import { useChainId } from "wagmi";
+import { formatUnits } from "viem";
 import InchModal from "./components/InchModal";
 import useInchDex from "hooks/useInchDex";
 import { Button, Image, Input, InputNumber, Modal, Popover } from "antd";
 import { ArrowDownOutlined, SettingOutlined } from "@ant-design/icons";
 import { tokenValue } from "helpers/formatters";
-import { getWrappedNative } from "helpers/networks";
 
 const nativeAddress = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 const FALLBACK_LOGO = "https://etherscan.io/images/main/empty-token.png";
@@ -17,11 +17,6 @@ const chainIds = {
   "0x89": "polygon",
 };
 
-const getChainIdByName = (chainName) =>
-  Object.keys(chainIds).find((key) => chainIds[key] === chainName) ?? null;
-
-const IsNative = (address) => address === nativeAddress;
-
 const InfoRow = ({ label, children }) => (
   <div className="flex items-center justify-between gap-4 px-1 text-sm text-fg-muted">
     <span>{label}</span>
@@ -30,9 +25,13 @@ const InfoRow = ({ label, children }) => (
 );
 
 function DEX({ chain, customTokens = {} }) {
-  const { trySwap, tokenList, getQuote } = useInchDex(chain);
+  const { trySwap, tokenList, getQuote, swapDisabledReason } =
+    useInchDex(chain);
 
-  const { Moralis, isInitialized, chainId } = useMoralis();
+  // wagmi reports the chain as a number (1); the rest of this component and the
+  // 1inch address maps are keyed by the hex string Moralis used ("0x1").
+  const numericChainId = useChainId();
+  const chainId = numericChainId ? `0x${numericChainId.toString(16)}` : null;
   const [isFromModalActive, setFromModalActive] = useState(false);
   const [isToModalActive, setToModalActive] = useState(false);
   const [fromToken, setFromToken] = useState();
@@ -41,8 +40,9 @@ function DEX({ chain, customTokens = {} }) {
   const [quote, setQuote] = useState();
   const [slippage, setSlippage] = useState(1);
   const [currentTrade, setCurrentTrade] = useState();
-  const { fetchTokenPrice } = useTokenPrice();
-  const [tokenPricesUSD, setTokenPricesUSD] = useState({});
+  // USD pricing came from Moralis' price oracle and went with it. The rows that
+  // used it render null rather than a stale or invented number.
+  const [tokenPricesUSD] = useState({});
 
   const tokens = useMemo(() => {
     return { ...customTokens, ...tokenList };
@@ -58,8 +58,9 @@ function DEX({ chain, customTokens = {} }) {
 
   const toTokenAmount = useMemo(() => {
     if (!quote?.toTokenAmount) return null;
-    return Moralis?.Units?.FromWei(quote.toTokenAmount, quote.toToken.decimals);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return Number(
+      formatUnits(BigInt(quote.toTokenAmount), quote.toToken.decimals),
+    );
   }, [quote]);
 
   const toTokenAmountUsd = useMemo(() => {
@@ -74,42 +75,11 @@ function DEX({ chain, customTokens = {} }) {
     }`;
   }, [toTokenAmount, toToken, slippage]);
 
-  // token prices (functional updates: both effects may resolve in the same tick)
-  useEffect(() => {
-    if (!isInitialized || !fromToken || !chain) return;
-    const validatedChain = getChainIdByName(chain) ?? chainId;
-    const tokenAddress = IsNative(fromToken.address)
-      ? getWrappedNative(validatedChain)
-      : fromToken.address;
-    if (!validatedChain || !tokenAddress) return;
-    fetchTokenPrice({
-      params: { chain: validatedChain, address: tokenAddress },
-      onSuccess: (price) =>
-        setTokenPricesUSD((prev) => ({
-          ...prev,
-          [fromToken.address]: price.usdPrice,
-        })),
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chain, isInitialized, fromToken]);
-
-  useEffect(() => {
-    if (!isInitialized || !toToken || !chain) return;
-    const validatedChain = getChainIdByName(chain) ?? chainId;
-    const tokenAddress = IsNative(toToken.address)
-      ? getWrappedNative(validatedChain)
-      : toToken.address;
-    if (!validatedChain || !tokenAddress) return;
-    fetchTokenPrice({
-      params: { chain: validatedChain, address: tokenAddress },
-      onSuccess: (price) =>
-        setTokenPricesUSD((prev) => ({
-          ...prev,
-          [toToken.address]: price.usdPrice,
-        })),
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chain, isInitialized, toToken]);
+  // The two effects that used to live here fetched USD prices for the selected
+  // pair from Moralis' price oracle. They went with the rest of Moralis; the
+  // "~$x.xx" rows below simply render null now. A replacement would be a
+  // spot-price call to the same provider the swap eventually uses, so it is
+  // deliberately left for the 1inch work rather than bolted on separately.
 
   useEffect(() => {
     if (!tokens || fromToken) return;
@@ -117,13 +87,15 @@ function DEX({ chain, customTokens = {} }) {
   }, [tokens, fromToken]);
 
   const ButtonState = useMemo(() => {
+    if (swapDisabledReason)
+      return { isActive: false, text: "Swapping unavailable" };
     if (chainIds?.[chainId] !== chain)
       return { isActive: false, text: `Switch to ${chain}` };
 
     if (!fromAmount) return { isActive: false, text: "Enter an amount" };
     if (fromAmount && currentTrade) return { isActive: true, text: "Swap" };
     return { isActive: false, text: "Select tokens" };
-  }, [fromAmount, currentTrade, chainId, chain]);
+  }, [fromAmount, currentTrade, chainId, chain, swapDisabledReason]);
 
   useEffect(() => {
     if (fromToken && toToken && fromAmount)
@@ -304,6 +276,12 @@ function DEX({ chain, customTokens = {} }) {
               </InfoRow>
             )}
           </div>
+        )}
+
+        {swapDisabledReason && (
+          <p className="mt-4 mb-0 rounded-xl border border-dashed border-ink-border px-3 py-2 text-sm text-fg-muted">
+            {swapDisabledReason}
+          </p>
         )}
 
         <Button

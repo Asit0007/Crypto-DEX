@@ -8,7 +8,18 @@ export default defineConfig({
   base: "/",
   plugins: [
     react(),
-    // moralis v1 / web3 libs expect node globals in the browser bundle
+    // Was added because moralis v1 / ethers 5 expected node globals in the browser
+    // bundle. Moralis is gone, and wagmi/viem are pure ESM that need none of this,
+    // so this plugin is probably removable now — but some WalletConnect builds
+    // still reach for Buffer at runtime, which a passing `vite build` would not
+    // catch. Left in place until someone removes it and actually connects a
+    // wallet through WalletConnect in a browser to confirm.
+    //
+    // It is not a security exposure in the meantime: the plugin pulls
+    // crypto-browserify -> elliptic (critical, range `*`) into the *dev* tree, but
+    // nothing imports node crypto any more, so none of it is bundled. Verify with
+    // `npm run build && grep -c crypto-browserify dist/assets/*.js` (expect 0) and
+    // `npm audit --omit=dev` (expect 0 vulnerabilities).
     nodePolyfills({ globals: { Buffer: true, global: true, process: true } }),
   ],
   // REACT_APP_ kept so the existing .env files keep working post-CRA

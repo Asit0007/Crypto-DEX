@@ -19,7 +19,7 @@ import Contract from "components/Contract/Contract";
 import RequireWallet from "components/RequireWallet";
 import MenuItems from "./components/MenuItems";
 
-const App = ({ isServerInfo }) => {
+const App = () => {
   return (
     <Router>
       <div className="flex min-h-screen flex-col">
@@ -36,7 +36,7 @@ const App = ({ isServerInfo }) => {
         <main className="flex flex-1 justify-center px-3 py-8 sm:px-6">
           <Switch>
             <Route exact path="/quickstart">
-              <QuickStart isServerInfo={isServerInfo} />
+              <QuickStart />
             </Route>
             <Route path="/wallet">
               <RequireWallet>

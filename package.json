@@ -22,8 +22,6 @@
     "build": "vite build",
     "preview": "vite preview",
     "devchain": "node Truffle/scripts/devChain.js",
-    "connect": "moralis-admin-cli connect-local-devchain",
-    "watch:events": "moralis-admin-cli add-contract",
     "migrate": "node Truffle/scripts/deployContract.js",
     "lint:check": "eslint .",
     "lint:fix": "eslint . --fix",
